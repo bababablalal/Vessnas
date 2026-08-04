@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pixel Art Converter - GitHub Theme</title>
+  <style>
+    :root {
+      --bg-color: #101B7A;
+      --card-bg: #593D29;
+      --accent-color: #8CE63A;
+      --text-color: #FFFFFF;
+      --border-color: #000000;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 0px #000;
+      text-align: center;
+    }
+
+    .container {
+      background: var(--card-bg);
+      border: 3px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+      max-width: 900px;
+      width: 100%;
+      box-shadow: 0 8px 0px #000;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 15px;
+      border-radius: 6px;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    input[type="file"], select, input[type="number"], input[type="range"] {
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #000;
+      background: #ffffff;
+      color: #000;
+      font-size: 14px;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 5px;
+    }
+
+    .checkbox-group input {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .dim-inputs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dim-inputs input {
+      width: 100%;
+    }
+
+    .preview-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: auto;
+      background: #000000;
+      border: 2px dashed #7F7F7F;
+      min-height: 320px;
+      max-height: 500px;
+      border-radius: 4px;
+      padding: 15px;
+    }
+
+    canvas {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      max-width: 100%;
+      max-height: 450px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+      flex-wrap: wrap;
+    }
+
+    .download-btn {
+      flex: 1;
+      min-width: 200px;
+      background-color: var(--accent-color);
+      color: #000000;
+      border: 2px solid #000;
+      padding: 12px 20px;
+      font-weight: bold;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.15s ease;
+      text-align: center;
+    }
+
+    .download-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 0px #000;
+    }
+
+    .download-btn.secondary {
+      background-color: #CCE5FF;
+    }
+
+    .palette-info {
+      margin-top: 15px;
+      font-size: 12px;
+      color: #E3E4E5;
+      text-align: center;
+    }
+
+    .resolution-info {
+      font-size: 13px;
+      color: #8CE63A;
+      font-weight: bold;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Pixel Art Dönüştürücü</h1>
+
+  <div class="container">
+    <div class="controls">
+      
+      <!-- 1. Görsel Yükle -->
+      <div class="control-group">
+        <label for="imageLoader">Görsel Yükle:</label>
+        <input type="file" id="imageLoader" accept="image/*">
+      </div>
+
+      <!-- 2. Hazır Çözünürlük Seçimi -->
+      <div class="control-group">
+        <label for="presetSelect">Hazır Çözünürlük:</label>
+        <select id="presetSelect">
+          <option value="custom">Özel Boyut (Slider / Manuel)</option>
+          <option value="16">16 x 16 (İkon)</option>
+          <option value="24">24 x 24</option>
+          <option value="32" selected>32 x 32 (Standart Pixel)</option>
+          <option value="48">48 x 48</option>
+          <option value="64">64 x 64</option>
+          <option value="96">96 x 96</option>
+          <option value="128">128 x 128 (Detaylı Pixel)</option>
+          <option value="256">256 x 256</option>
+        </select>
+      </div>
+
+      <!-- 3. Piksel Slider -->
+      <div class="control-group">
+        <label for="pixelSlider">Piksel Genişliği: <span id="sliderValue">32</span> px</label>
+        <input type="range" id="pixelSlider" min="8" max="256" value="32">
+      </div>
+
+      <!-- 4. Özel Genişlik / Yükseklik ve En-Boy Oranı -->
+      <div class="control-group">
+        <label>Manuel Boyut (G x Y):</label>
+        <div class="dim-inputs">
+          <input type="number" id="widthInput" value="32" min="4" max="1024">
+          <span>x</span>
+          <input type="number" id="heightInput" value="32" min="4" max="1024">
+        </div>
+        <div class="checkbox-group">
+          <input type="checkbox" id="aspectRatioCheck" checked>
+          <label for="aspectRatioCheck" style="font-size:12px; font-weight:normal;">En-Boy Oranını Koruma</label>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Önizleme Alanı -->
+    <div class="preview-container">
+      <canvas id="canvas"></canvas>
+    </div>
+
+    <div class="resolution-info" id="resolutionInfo">Aktif Çözünürlük: 32 x 32 px</div>
+
+    <!-- İndirme Seçenekleri -->
+    <div class="btn-group">
+      <button class="download-btn" id="downloadNativeBtn">Birebir Çözünürlükte İndir (Gerçek Pixel)</button>
+      <button class="download-btn secondary" id="downloadHDBtn">Net Büyütülmüş İndir (1024px HD Pixel Art)</button>
+    </div>
+
+    <div class="palette-info">Özel Renk Paleti: 30 Renk Kodlu Matris</div>
+  </div>
+
+  <script>
+    // Kullanıcının Özel Renk Paleti (30 Renk)
+    const hexPalette = [
+      "#FFFFFF", "#593D29", "#E3E4E5", "#F7E1B5",
+      "#CCCCCC", "#FFFF80", "#7F7F7F", "#E5D900",
+      "#4C4C4C", "#8CE63A", "#000000", "#00CD00",
+      "#FFA0A0", "#5C7835", "#FF80C0", "#006B1F",
+      "#FF3399", "#CCE5FF", "#FF5555", "#00CCE5",
+      "#FF0000", "#0080D0", "#800000", "#0000FF",
+      "#FF9955", "#101B7A", "#E59000", "#CD78EA",
+      "#9A643E", "#800080"
+    ];
+
+    const rgbPalette = hexPalette.map(hex => {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return [r, g, b];
+    });
+
+    const imageLoader = document.getElementById('imageLoader');
+    const presetSelect = document.getElementById('presetSelect');
+    const pixelSlider = document.getElementById('pixelSlider');
+    const sliderValue = document.getElementById('sliderValue');
+    const widthInput = document.getElementById('widthInput');
+    const heightInput = document.getElementById('heightInput');
+    const aspectRatioCheck = document.getElementById('aspectRatioCheck');
+    const resolutionInfo = document.getElementById('resolutionInfo');
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    const downloadNativeBtn = document.getElementById('downloadNativeBtn');
+    const downloadHDBtn = document.getElementById('downloadHDBtn');
+
+    let img = new Image();
+    let originalAspectRatio = 1;
+
+    // Fotoğraf Yükleme
+    imageLoader.addEventListener('change', (e) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        img = new Image();
+        img.onload = () => {
+          originalAspectRatio = img.width / img.height;
+          updateDimensionsFromWidth(parseInt(widthInput.value));
+          processImage();
+        };
+        img.src = event.target.result;
+      };
+      if (e.target.files[0]) {
+        reader.readAsDataURL(e.target.files[0]);
+      }
+    });
+
+    // Preset Seçimi
+    presetSelect.addEventListener('change', () => {
+      const val = presetSelect.value;
+      if (val !== 'custom') {
+        const size = parseInt(val);
+        pixelSlider.value = size;
+        sliderValue.textContent = size;
+        if (aspectRatioCheck.checked && img.src) {
+          widthInput.value = size;
+          heightInput.value = Math.round(size / originalAspectRatio);
+        } else {
+          widthInput.value = size;
+          heightInput.value = size;
+        }
+      }
+      if (img.src) processImage();
+    });
+
+    // Slider Değişimi
+    pixelSlider.addEventListener('input', () => {
+      const val = parseInt(pixelSlider.value);
+      sliderValue.textContent = val;
+      presetSelect.value = 'custom';
+      updateDimensionsFromWidth(val);
+      if (img.src) processImage();
+    });
+
+    // Manuel Genişlik Değişimi
+    widthInput.addEventListener('input', () => {
+      const w = parseInt(widthInput.value) || 16;
+      presetSelect.value = 'custom';
+      pixelSlider.value = Math.min(Math.max(w, 8), 256);
+      sliderValue.textContent = pixelSlider.value;
+      
+      if (aspectRatioCheck.checked && img.src) {
+        heightInput.value = Math.max(1, Math.round(w / originalAspectRatio));
+      }
+      if (img.src) processImage();
+    });
+
+    // Manuel Yükseklik Değişimi
+    heightInput.addEventListener('input', () => {
+      const h = parseInt(heightInput.value) || 16;
+      presetSelect.value = 'custom';
+      if (aspectRatioCheck.checked && img.src) {
+        widthInput.value = Math.max(1, Math.round(h * originalAspectRatio));
+        pixelSlider.value = Math.min(Math.max(widthInput.value, 8), 256);
+        sliderValue.textContent = pixelSlider.value;
+      }
+      if (img.src) processImage();
+    });
+
+    function updateDimensionsFromWidth(w) {
+      widthInput.value = w;
+      if (aspectRatioCheck.checked && img.src) {
+        heightInput.value = Math.max(1, Math.round(w / originalAspectRatio));
+      }
+    }
+
+    // En yakın renk eşleştirme (Euclidean Distance)
+    function getNearestColor(r, g, b) {
+      let minDistance = Infinity;
+      let nearestColor = rgbPalette[0];
+
+      for (let i = 0; i < rgbPalette.length; i++) {
+        const pr = rgbPalette[i][0];
+        const pg = rgbPalette[i][1];
+        const pb = rgbPalette[i][2];
+
+        const distance = Math.sqrt(
+          (r - pr) ** 2 +
+          (g - pg) ** 2 +
+          (b - pb) ** 2
+        );
+
+        if (distance < minDistance) {
+          minDistance = distance;
+          nearestColor = rgbPalette[i];
+        }
+      }
+      return nearestColor;
+    }
+
+    // Görsel İşleme
+    function processImage() {
+      const targetW = parseInt(widthInput.value) || 32;
+      const targetH = parseInt(heightInput.value) || 32;
+
+      resolutionInfo.textContent = `Aktif Çözünürlük: ${targetW} x ${targetH} px`;
+
+      canvas.width = targetW;
+      canvas.height = targetH;
+
+      const tempCanvas = document.createElement('canvas');
+      const tempCtx = tempCanvas.getContext('2d');
+      tempCanvas.width = targetW;
+      tempCanvas.height = targetH;
+
+      tempCtx.drawImage(img, 0, 0, targetW, targetH);
+      const imgData = tempCtx.getImageData(0, 0, targetW, targetH);
+      const data = imgData.data;
+
+      for (let y = 0; y < targetH; y++) {
+        for (let x = 0; x < targetW; x++) {
+          const idx = (y * targetW + x) * 4;
+          const r = data[idx];
+          const g = data[idx + 1];
+          const b = data[idx + 2];
+          const a = data[idx + 3];
+
+          if (a < 128) {
+            ctx.clearRect(x, y, 1, 1);
+            continue;
+          }
+
+          const [nr, ng, nb] = getNearestColor(r, g, b);
+          ctx.fillStyle = `rgb(${nr}, ${ng}, ${nb})`;
+          ctx.fillRect(x, y, 1, 1);
+        }
+      }
+    }
+
+    // 1. Gerçek Birebir Çözünürlükte İndirme
+    downloadNativeBtn.addEventListener('click', () => {
+      if (!img.src) return alert("Lütfen önce bir görsel yükleyin!");
+      const w = canvas.width;
+      const h = canvas.height;
+      const link = document.createElement('a');
+      link.download = `pixel-art-${w}x${h}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    });
+
+    // 2. Sosyal Medya / HD Büyütülmüş İndirme (Pikseller bozulmadan keskin büyütülür)
+    downloadHDBtn.addEventListener('click', () => {
+      if (!img.src) return alert("Lütfen önce bir görsel yükleyin!");
+      
+      const hdCanvas = document.createElement('canvas');
+      const hdCtx = hdCanvas.getContext('2d');
+      
+      const scale = Math.max(1, Math.floor(1024 / Math.max(canvas.width, canvas.height)));
+      hdCanvas.width = canvas.width * scale;
+      hdCanvas.height = canvas.height * scale;
+
+      hdCtx.imageSmoothingEnabled = false;
+      hdCtx.webkitImageSmoothingEnabled = false;
+      hdCtx.mozImageSmoothingEnabled = false;
+
+      hdCtx.drawImage(canvas, 0, 0, hdCanvas.width, hdCanvas.height);
+
+      const link = document.createElement('a');
+      link.download = `pixel-art-HD-${hdCanvas.width}x${hdCanvas.height}.png`;
+      link.href = hdCanvas.toDataURL('image/png');
+      link.click();
+    });
+  </script>
+</body>
+</html>
