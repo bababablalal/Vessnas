@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Sohbet Asistanı</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: #0d1117;
+    color: #f0f6fc;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 16px;
+  }
+  .chat-container {
+    width: 100%;
+    max-width: 480px;
+    height: 90vh;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  }
+  .chat-header {
+    background: #21262d;
+    padding: 16px;
+    border-bottom: 1px solid #30363d;
+    text-align: center;
+  }
+  .chat-header h2 {
+    font-size: 18px;
+    color: #58a6ff;
+  }
+  .chat-header p {
+    font-size: 12px;
+    color: #8b949e;
+    margin-top: 4px;
+  }
+  .chat-box {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .message {
+    max-width: 80%;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.4;
+    word-wrap: break-word;
+  }
+  .user-message {
+    align-self: flex-end;
+    background: #1f6feb;
+    color: #ffffff;
+  }
+  .bot-message {
+    align-self: flex-start;
+    background: #21262d;
+    border: 1px solid #30363d;
+    color: #f0f6fc;
+  }
+  .input-area {
+    padding: 12px;
+    background: #161b22;
+    border-top: 1px solid #30363d;
+    display: flex;
+    gap: 8px;
+  }
+  .input-area input {
+    flex: 1;
+    padding: 10px 12px;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    color: #f0f6fc;
+    font-size: 14px;
+    outline: none;
+  }
+  .input-area input:focus {
+    border-color: #1f6feb;
+  }
+  .input-area button {
+    padding: 10px 16px;
+    background: #238636;
+    border: none;
+    border-radius: 6px;
+    color: #ffffff;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .input-area button:hover {
+    background: #2ea043;
+  }
+</style>
+</head>
+<body>
+
+<div class="chat-container">
+  <div class="chat-header">
+    <h2>AI Asistan</h2>
+    <p>Seninle ve projelerinle ilgili bilgilere sahip</p>
+  </div>
+  <div class="chat-box" id="chatBox">
+    <div class="message bot-message">
+      Merhaba! Ben senin yapay zeka asistanınım. Seninle ve projelerinle ilgili bilgilere sahibim. Bana ne sormak istersin?
+    </div>
+  </div>
+  <div class="input-area">
+    <input type="text" id="userInput" placeholder="Bir şeyler yazın..." onkeydown="handleKeyPress(event)">
+    <button onclick="sendMessage()">Gönder</button>
+  </div>
+</div>
+
+<script>
+  // Yapay Zekanın Bilgi Hafızası (Seninle İlgili Bilgiler)
+  const knowledgeBase = [
+    { keywords: ["kullanıcı adım", "kullanıcı adı", "benim adım", "hesabım"], response: "GitHub kullanıcı adın **bababablalal**." },
+    { keywords: ["projem", "sitem", "repository", "repo", "vessnas"], response: "GitHub üzerindeki projenin/deponun adı **Vessnas**. Sitenin adresi tahminen: https://bababablalal.github.io/Vessnas/" },
+    { keywords: ["tevfik fikret"], response: "Tevfik Fikret (1867-1915), Servet-i Fünun döneminin ünlü Türk şair ve öğretmenidir. 'Rübab-ı Şikeste' ve 'Haluk'un Defteri' en bilinen eserlerindendir." },
+    { keywords: ["messi"], response: "Lionel Messi futbol dünyasının en büyük efsanelerinden biridir!" },
+    { keywords: ["merhaba", "selam", "sa"], response: "Selam! Nasıl yardımcı olabilirim?" },
+    { keywords: ["kimsin", "sen kimsin", "necisin"], response: "Ben sana özel olarak eğitilmiş, bilgileri barındıran yerel bir HTML AI asistanıyım." }
+  ];
+
+  function sendMessage() {
+    const input = document.getElementById("userInput");
+    const messageText = input.value.trim();
+    if (!messageText) return;
+
+    // Kullanıcı mesajını ekle
+    appendMessage(messageText, "user-message");
+    input.value = "";
+
+    // Bot yanıtı oluştur
+    setTimeout(() => {
+      const botResponse = generateResponse(messageText);
+      appendMessage(botResponse, "bot-message");
+    }, 400);
+  }
+
+  function generateResponse(userText) {
+    const textLower = userText.toLowerCase();
+
+    // Bilgi bankasında eşleşme ara
+    for (let item of knowledgeBase) {
+      if (item.keywords.some(keyword => textLower.includes(keyword))) {
+        return item.response;
+      }
+    }
+
+    // Eşleşme yoksa varsayılan yanıt
+    return "Bu konuda henüz detaylı bilgim yok ama bilgilerimi güncellemek istersen HTML kodundaki `knowledgeBase` alanına yeni şeyler ekleyebilirsin!";
+  }
+
+  function appendMessage(text, className) {
+    const chatBox = document.getElementById("chatBox");
+    const messageElement = document.createElement("div");
+    messageElement.classList.add("message", className);
+    messageElement.innerHTML = text;
+    chatBox.appendChild(messageElement);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+
+  function handleKeyPress(event) {
+    if (event.key === "Enter") {
+      sendMessage();
+    }
+  }
+</script>
+
+</body>
+</html>
