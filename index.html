@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Altın Tıklayıcı</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; user-select:none; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: #0d1117;
+    color: #f0f6fc;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px 16px;
+  }
+  h1 { color: #58a6ff; font-size: 24px; margin-bottom: 10px; }
+  .score-container {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  .score { font-size: 42px; font-weight: bold; color: #3fb950; }
+  .cps { font-size: 14px; color: #8b949e; margin-top: 4px; }
+  
+  .click-area {
+    position: relative;
+    margin-bottom: 25px;
+  }
+  .click-btn {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1f6feb, #2ea043);
+    border: 4px solid #30363d;
+    font-size: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 0 25px rgba(31, 111, 235, 0.4);
+    transition: transform 0.05s;
+  }
+  .click-btn:active {
+    transform: scale(0.92);
+  }
+
+  .shop {
+    width: 100%;
+    max-width: 360px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .shop h2 { 
+    font-size: 16px; 
+    margin-bottom: 12px; 
+    color: #f0f6fc; 
+    border-bottom: 1px solid #30363d; 
+    padding-bottom: 8px; 
+  }
+  
+  .upgrade-btn {
+    width: 100%;
+    background: #21262d;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #f0f6fc;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .upgrade-btn:hover { background: #30363d; }
+  .upgrade-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .upgrade-info h4 { font-size: 14px; text-align: left; }
+  .upgrade-info p { font-size: 11px; color: #8b949e; text-align: left; }
+  .upgrade-cost { font-weight: bold; color: #e3b341; font-size: 13px; }
+
+  .floating-num {
+    position: absolute;
+    font-weight: bold;
+    color: #3fb950;
+    font-size: 22px;
+    pointer-events: none;
+    animation: floatUp 0.7s ease-out forwards;
+  }
+  @keyframes floatUp {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-40px); }
+  }
+</style>
+</head>
+<body>
+
+  <h1>⚽ Altın Tıklayıcı</h1>
+  <div class="score-container">
+    <div class="score" id="score">0</div>
+    <div class="cps" id="cps">Saniyede: 0 puan | Tıklama: +1</div>
+  </div>
+
+  <div class="click-area">
+    <div class="click-btn" id="clickBtn" onclick="clickMain(event)">⚽</div>
+  </div>
+
+  <div class="shop">
+    <h2>Geliştirmeler & Market</h2>
+
+    <button class="upgrade-btn" id="upg1" onclick="buyClickPower()">
+      <div class="upgrade-info">
+        <h4>Süper Tıklama (+1)</h4>
+        <p>Her tıklamada daha fazla kazan</p>
+      </div>
+      <div class="upgrade-cost" id="cost1">10 Puan</div>
+    </button>
+
+    <button class="upgrade-btn" id="upg2" onclick="buyAutoClicker()">
+      <div class="upgrade-info">
+        <h4>Otomatik Bot (+1/sn)</h4>
+        <p>Saniyede 1 puan otomatik üretir</p>
+      </div>
+      <div class="upgrade-cost" id="cost2">50 Puan</div>
+    </button>
+
+    <button class="upgrade-btn" id="upg3" onclick="buyMegaBot()">
+      <div class="upgrade-info">
+        <h4>Messi Menajeri (+10/sn)</h4>
+        <p>Aşırı hızlı puan kazandırır</p>
+      </div>
+      <div class="upgrade-cost" id="cost3">300 Puan</div>
+    </button>
+  </div>
+
+<script>
+  let score = 0;
+  let clickPower = 1;
+  let cps = 0;
+
+  let cost1 = 10;
+  let cost2 = 50;
+  let cost3 = 300;
+
+  // Sayfa yüklendiğinde eski skoru ve yükseltmeleri hatırla
+  if(localStorage.getItem('clicker_score')) {
+    score = parseInt(localStorage.getItem('clicker_score')) || 0;
+    clickPower = parseInt(localStorage.getItem('clicker_power')) || 1;
+    cps = parseInt(localStorage.getItem('clicker_cps')) || 0;
+    cost1 = parseInt(localStorage.getItem('clicker_cost1')) || 10;
+    cost2 = parseInt(localStorage.getItem('clicker_cost2')) || 50;
+    cost3 = parseInt(localStorage.getItem('clicker_cost3')) || 300;
+  }
+
+  function updateUI() {
+    document.getElementById('score').innerText = Math.floor(score);
+    document.getElementById('cps').innerText = `Saniyede: ${cps} puan | Tıklama: +${clickPower}`;
+    
+    document.getElementById('cost1').innerText = `${cost1} Puan`;
+    document.getElementById('cost2').innerText = `${cost2} Puan`;
+    document.getElementById('cost3').innerText = `${cost3} Puan`;
+
+    document.getElementById('upg1').disabled = score < cost1;
+    document.getElementById('upg2').disabled = score < cost2;
+    document.getElementById('upg3').disabled = score < cost3;
+
+    // Tarayıcı hafızasına kaydet
+    localStorage.setItem('clicker_score', score);
+    localStorage.setItem('clicker_power', clickPower);
+    localStorage.setItem('clicker_cps', cps);
+    localStorage.setItem('clicker_cost1', cost1);
+    localStorage.setItem('clicker_cost2', cost2);
+    localStorage.setItem('clicker_cost3', cost3);
+  }
+
+  function clickMain(e) {
+    score += clickPower;
+    createFloatingNum(e, `+${clickPower}`);
+    updateUI();
+  }
+
+  function createFloatingNum(e, text) {
+    const btn = document.getElementById('clickBtn');
+    const rect = btn.getBoundingClientRect();
+    
+    const num = document.createElement('div');
+    num.className = 'floating-num';
+    num.innerText = text;
+    
+    const x = (e.clientX || (rect.left + rect.width / 2)) - rect.left;
+    const y = (e.clientY || (rect.top + rect.height / 2)) - rect.top;
+    
+    num.style.left = `${x}px`;
+    num.style.top = `${y}px`;
+    
+    btn.parentElement.appendChild(num);
+    setTimeout(() => num.remove(), 700);
+  }
+
+  function buyClickPower() {
+    if(score >= cost1) {
+      score -= cost1;
+      clickPower += 1;
+      cost1 = Math.floor(cost1 * 1.5);
+      updateUI();
+    }
+  }
+
+  function buyAutoClicker() {
+    if(score >= cost2) {
+      score -= cost2;
+      cps += 1;
+      cost2 = Math.floor(cost2 * 1.6);
+      updateUI();
+    }
+  }
+
+  function buyMegaBot() {
+    if(score >= cost3) {
+      score -= cost3;
+      cps += 10;
+      cost3 = Math.floor(cost3 * 1.7);
+      updateUI();
+    }
+  }
+
+  // Her saniye otomatik puan ekler
+  setInterval(() => {
+    if(cps > 0) {
+      score += cps;
+      updateUI();
+    }
+  }, 1000);
+
+  updateUI();
+</script>
+
+</body>
+</html>
